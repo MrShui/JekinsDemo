@@ -1,5 +1,11 @@
 apply plugin: 'com.android.application'
 
+def releaseTime() {
+    return new Date().format("yyyyMMdd", TimeZone.getTimeZone("UTC"))
+}
+
+Map<String,String> propertices = project.getProperties();
+
 android {
     compileSdkVersion 24
     buildToolsVersion "24.0.2"
@@ -16,8 +22,33 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
+
+        applicationVariants.all { variant ->
+            variant.outputs.each { output ->
+                def outputFile = output.outputFile
+                if (outputFile != null && outputFile.name.endsWith('.apk')) {
+                    String environment;
+                    if(propertices.containsKey("environment")){
+                        environment = propertices.get("environment");
+                    }else{
+                        environment = "product";
+                    }
+
+                    def fileName = "jenkinsTest_V${defaultConfig.versionName}_${releaseTime()}_${variant.productFlavors[0].name}_${environment}_1_A_${BuildType}.apk"
+                    output.outputFile = new File(outputFile.parent, fileName)
+                }
+            }
+        }
+    }
+
+    productFlavors {
+        CDN {
+            manifestPlaceholders = [CHANNEL_NAME: "002019"]
+        }
     }
 }
+
+
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
